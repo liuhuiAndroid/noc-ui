@@ -32,14 +32,17 @@
       <el-table-column align="center" width="120px" label="角色" prop="roleName">
       </el-table-column>
 
-      <el-table-column align="center" width="100px" label="状态" prop="status" @click="filterTag" column-key="status"
+      <el-table-column align="center" width="100px" label="状态" prop="flgFreeze" @click="filterTag" column-key="flgFreeze"
                        :filters="[{ text: '可用', value: '0' }, { text: '冻结', value: '1' } ]">
         <template slot-scope="scope">
-          <el-tag :type="scope.row.status | statusFilter" :filter-method="filterTag">{{scope.row.status}}</el-tag>
+          <el-tag :type="scope.row.flgFreeze | statusFilter" :filter-method="filterTag">{{scope.row.flgFreeze}}</el-tag>
         </template>
       </el-table-column>
 
-      <el-table-column align="center" min-width="180px" label="注册时间" prop="create_Time" sortable>
+      <el-table-column align="center" min-width="180px" label="注册时间" prop="createTime" sortable>
+        <template slot-scope="scope">
+          <span>{{ scope.row.createTime | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
+        </template>
       </el-table-column>
 
       <el-table-column align="center" label="操作" width="250" class-name="small-padding fixed-width">
@@ -57,9 +60,11 @@
     <!-- 分页 -->
     <div class="pagination-container">
       <el-pagination background @size-change="handleSizeChange" @current-change="handleCurrentChange"
-                     :current-page="listQuery.page"
-                     :page-sizes="[10,20,30,50]" :page-size="listQuery.limit"
-                     layout="total, sizes, prev, pager, next, jumper" :total="total">
+                     :current-page="listQuery.page + 1"
+                     :page-sizes="[10,20,30,50]"    
+                     :page-size="listQuery.size"
+                     layout="total, sizes, prev, pager, next, jumper" 
+                     :total="total">
       </el-pagination>
     </div>
 
@@ -82,7 +87,7 @@
         <el-form-item label="姓名" prop="realName">
           <el-input v-model="dataForm.realName"></el-input>
         </el-form-item>
-        <el-form-item label=" 角色" prop="roleId">
+        <el-form-item label="角色" prop="roleId">
           <el-select v-model="dataForm.roleId" style="width:300px" placeholder="请选择">
             <el-option v-for="item in roleMap" :key="item.id" :label="item.nmDisplay" :value="item.id">
             </el-option>
@@ -104,6 +109,7 @@
   // 导入js方法引用
   import {createUser, deleteObj, fetchList, freezeObj, unfreezeObj, updateUser} from '@/api/user'
   import waves from '@/directive/waves' // 水波纹指令
+  import { parseTime } from '@/utils'
   // 导出模块声明
   export default {
     name: 'User',
@@ -144,15 +150,14 @@
       }
       // 返回数据
       return {
-        page: 1,
         list: null,
         total: null,
         listLoading: true,
         roleMap: {},
         filter: '',
         listQuery: { // 分页数据
-          page: 1,
-          limit: 10,
+          page: 0,
+          size: 10,
           username: undefined,
           mobile: undefined,
           freeze: undefined,
@@ -201,9 +206,8 @@
     filters: {
       statusFilter(status) {
         const statusMap = {
-          '可用': 'success', // 数据值 对应显示图标颜色
-          '冻结': 'info',
-          '删除': 'info'
+          '0': 'success', // 数据值 对应显示图标颜色
+          '1': 'info'
         }
         return statusMap[status]
       }
@@ -217,9 +221,9 @@
       getList() {
         this.listLoading = true
         fetchList(this.listQuery).then(response => {
-          this.list = response
-          console.log(this.list)
-          // this.total = response.data.data.total
+          console.log(response)
+          this.list = response.content
+          this.total = response.totalElements // 总共有多少条数据
           this.listLoading = false
         }).catch(() => {
           this.list = []
@@ -238,18 +242,18 @@
 
       // 点击查询
       handleFilter() {
-        this.listQuery.page = 1
+        this.listQuery.page = 0
         this.getList()
       },
       // 分页数查询
       handleSizeChange(val) {
-        this.listQuery.limit = val
+        this.listQuery.size = val
+        this.listQuery.page = 0
         this.getList()
       },
       // 分页
       handleCurrentChange(val) {
-        this.page = val
-        this.listQuery.page = val
+        this.listQuery.page = val - 1
         this.getList()
       },
       // 重置提交表单
@@ -283,7 +287,7 @@
           }
         }
         this.listQuery.freeze = str
-        this.listQuery.page = 1
+        this.listQuery.page = 0
         this.getList()
       },
       // 创建页面
@@ -437,11 +441,11 @@
       },
       // table序号，当前页数
       typeIndex(index) {
-        return index + (this.page - 1) * 10 + 1
+        return index + this.listQuery.page * 10 + 1
       },
       // 导出
       handleDownload() {
-        this.listQuery.limit = this.total
+        this.listQuery.size = this.total
       }
     }
   }
