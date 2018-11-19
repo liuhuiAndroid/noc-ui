@@ -1,6 +1,6 @@
 <template>
   <el-menu class="navbar" mode="horizontal">
-    <hamburger :toggle-click="toggleSideBar" :is-active="sidebar.opened" class="hamburger-container"/>
+    <hamburger :is-active="sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar"/>
     <breadcrumb />
     <el-dropdown class="avatar-container" trigger="click">
       <div class="avatar-wrapper">
@@ -76,6 +76,7 @@ export default {
       cursor: pointer;
       margin-top: 5px;
       position: relative;
+      line-height: initial;
       .user-avatar {
         width: 40px;
         height: 40px;

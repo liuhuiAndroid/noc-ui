@@ -36,7 +36,11 @@ export function parseTime(time, cFormat) {
 }
 
 export function formatTime(time, option) {
-  time = +time * 1000
+  if (('' + time).length === 10) {
+    time = parseInt(time) * 1000
+  } else {
+    time = +time
+  }
   const d = new Date(time)
   const now = Date.now()
 
@@ -67,4 +71,8 @@ export function formatTime(time, option) {
       '分'
     )
   }
+}
+
+export function isExternal(path) {
+  return /^(https?:|mailto:|tel:)/.test(path)
 }
